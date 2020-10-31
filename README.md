@@ -1,12 +1,12 @@
-# Laravel Shopify
+# Laravel Ezyslips
 
-Laravel Shopify is a simple package which helps to build robust integration into Shopify.
+Laravel Ezyslips is a simple package which helps to build robust integration into Ezyslips.
 
 ## Installation
 
 Add package to composer.json
 
-    composer require ClarityTech/laravel-shopify
+    composer require clarity-tech/laravel-ezyslips
 
 ### Laravel 5.5+
 
@@ -22,7 +22,7 @@ Add the service provider to config/app.php in the providers array.
 
 'providers' => [
     ...
-    ClarityTech\Shopify\ShopifyServiceProvider::class,
+    ClarityTech\Ezyslips\EzyslipsServiceProvider::class,
 ],
 ```
 
@@ -34,118 +34,41 @@ Setup alias for the Facade
 
 'aliases' => [
     ...
-    'Shopify' => ClarityTech\Shopify\Facades\Shopify::class,
+    'Ezyslips' => ClarityTech\Ezyslips\Facades\Ezyslips::class,
 ],
 ```
 
-## Configuration
+## Set credendials
 
-Laravel Shopify requires connection configuration. You will need to publish vendor assets
+in your `.env` file set these values from your app
+`EZYSLIPS_EMAIL=your-email`
+`EZYSLIPS_LICENSE_KEY=your-license-key`
 
-    php artisan vendor:publish
+## Optional Configuration (Publishing)
 
-This will create a shopify.php file in the config directory. You will need to set your **API_KEY** and **SECRET**
+Laravel Ezyslips requires you to set email and license key configuration. You will need to publish configs assets
+
+    `php artisan vendor:publish --tag=ezyslips-config`
+
+This will create a ezyslips.php file in the config directory.
+```
+'key' => env("EZYSLIPS_EMAIL", null),
+'secret' => env("EZYSLIPS_LICENSE_KEY", null)
+```
+
 
 ## Usage
 
-To install/integrate a shop you will need to initiate an oauth authentication with the shopify API and this require three components.
+Just set the env and use the Ezyslips facade or resolve it in the container
 
-They are:
+```php
+use ClarityTech\Ezyslips\Facades\Ezyslips;
 
-    1. Shop URL (eg. example.myshopify.com)
-    2. Scope (eg. write_products, read_orders, etc)
-    3. Redirect URL (eg. http://mydomain.com/process_oauth_result)
-
-This process will enable us to obtain the shops access token
-
-```php5
-use ClarityTech\Shopify\Facades\Shopify;
-
-Route::get("install_shop",function()
-{
-    $shopUrl = "example.myshopify.com";
-    $scope = ["write_products","read_orders"];
-    $redirectUrl = "http://mydomain.com/process_oauth_result";
-
-    $shopify = Shopify::setShopUrl($shopUrl);
-    return redirect()->to($shopify->getAuthorizeUrl($scope,$redirectUrl));
-});
+return Ezyslips::api()->order->create(
+    $attributes
+);
 ```
 
-Let's retrieve access token
-
-```php5
-Route::get("process_oauth_result",function(\Illuminate\Http\Request $request)
-{
-    $shopUrl = "example.myshopify.com";
-    $accessToken = Shopify::setShopUrl($shopUrl)->getAccessToken($request->code);
-
-    dd($accessToken);
-    
-    // redirect to success page or billing etc.
-});
-```
-
-To verify request(hmac)
-
-```php5
-public function verifyRequest(Request $request)
-{
-    $queryString = $request->getQueryString();
-
-    if(Shopify::verifyRequest($queryString)){
-        logger("verification passed");
-    }else{
-        logger("verification failed");
-    }
-}
-
-```
-
-To verify webhook(hmac)
-
-```php5
-
-public function verifyWebhook(Request $request)
-{
-    $data = $request->getContent();
-    $hmacHeader = $request->server('HTTP_X_SHOPIFY_HMAC_SHA256');
-
-    if (Shopify::verifyWebHook($data, $hmacHeader)) {
-        logger("verification passed");
-    } else {
-        logger("verification failed");
-    }
-}
-
-```
-
-To access API resource use
-
-```php5
-Shopify::get("resource uri", ["query string params"]);
-Shopify::post("resource uri", ["post body"]);
-Shopify::put("resource uri", ["put body"]);
-Shopify::delete("resource uri");
-```
-
-Let use our access token to get products from shopify.
-
-**NB:** You can use this to access any resource on shopify (be it Product, Shop, Order, etc)
-
-```php5
-$shopUrl = "example.myshopify.com";
-$accessToken = "xxxxxxxxxxxxxxxxxxxxx";
-$products = Shopify::setShopUrl($shopUrl)->setAccessToken($accessToken)->get("admin/products.json");
-```
-
-To pass query params
-
-```php5
-// returns Collection
-$shopify = Shopify::setShopUrl($shopUrl)->setAccessToken($accessToken);
-$products = $shopify->get("admin/products.json", ["limit"=>20, "page" => 1]);
-```
 
 ## Controller Example
 
@@ -153,29 +76,25 @@ If you prefer to use dependency injection over facades like me, then you can inj
 
 ```php5
 use Illuminate\Http\Request;
-use ClarityTech\Shopify\Shopify;
+use ClarityTech\Ezyslips\Ezyslips;
 
 class Foo
 {
-    protected $shopify;
+    protected $ezyslips;
 
-    public function __construct(Shopify $shopify)
+    public function __construct(Ezyslips $ezyslips)
     {
-        $this->shopify = $shopify;
+        $this->ezyslips = $ezyslips;
     }
 
     /*
     * returns Collection
     */
-    public function getProducts(Request $request)
+    public function getOrder(Request $request)
     {
-        $products = $this->shopify->setShopUrl($shopUrl)
-            ->setAccessToken($accessToken)
-            ->get('admin/products.json');
+        $orders = $this->ezyslips
+            ->get('getorders');
 
-        $products->each(function($product){
-             \Log::info($product->title);
-        });
     }
 }
 ```
@@ -185,25 +104,25 @@ class Foo
 To get Response headers
 
 ```php5
-Shopify::getHeaders();
+Ezyslips::getHeaders();
 ```
 
 To get specific header
 ```php5
-Shopify::getHeader("Content-Type");
+Ezyslips::getHeader("Content-Type");
 ```
 
 Check if header exist
 ```php5
-if(Shopify::hasHeader("Content-Type")){
+if(Ezyslips::hasHeader("Content-Type")){
     echo "Yes header exist";
 }
 ```
 
 To get response status code or status message
 ```php5
-Shopify::getStatusCode(); // 200
-Shopify::getReasonPhrase(); // ok
+Ezyslips::getStatusCode(); // 200
+Ezyslips::getReasonPhrase(); // ok
 ```
 
 

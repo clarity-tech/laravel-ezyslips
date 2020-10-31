@@ -1,11 +1,10 @@
 <?php
 
-namespace ClarityTech\Shopify;
+namespace ClarityTech\Ezyslips;
 
-use GuzzleHttp\Client;
 use Illuminate\Support\ServiceProvider;
 
-class ShopifyServiceProvider extends ServiceProvider
+class EzyslipsServiceProvider extends ServiceProvider
 {
     /**
      * Indicates if loading of the provider is deferred.
@@ -21,11 +20,14 @@ class ShopifyServiceProvider extends ServiceProvider
      */
     public function boot()
     {
-        $this->publishes([
-            __DIR__.'/../config/shopify.php' => config_path('shopify.php'),
-        ]);
+        if ($this->app->runningInConsole()) {
+            $this->publishes([
+                __DIR__.'/../config/ezyslips.php' => config_path('ezyslips.php'),
+            ], 'ezyslips-config');
+        }
+        
 
-        $this->app->alias('Shopify', 'ClarityTech\Shopify\Facades\Shopify');
+        $this->app->alias('Ezyslips', 'ClarityTech\Ezyslips\Facades\Ezyslips');
     }
 
     /**
@@ -35,9 +37,10 @@ class ShopifyServiceProvider extends ServiceProvider
      */
     public function register()
     {
-        $this->app->singleton('shopify',function($app) 
-        {
-            return new Shopify(new Client);
+        $this->mergeConfigFrom(__DIR__.'/../config/ezyslips.php', 'ezyslips');
+
+        $this->app->singleton('ezyslips', function ($app) {
+            return new Ezyslips();
         });
     }
 

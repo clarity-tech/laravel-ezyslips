@@ -4,13 +4,13 @@ return [
 
     /*
     |--------------------------------------------------------------------------
-    | Shopify Api
+    | EZYSLIPS Api
     |--------------------------------------------------------------------------
     |
-    | This file is for setting the credentials for shopify api key and secret.
+    | This file is for setting the credentials for EZYSLIPS api USERNAME and password.
     |
     */
 
-    'key' => env("SHOPIFY_APIKEY", null),
-    'secret' => env("SHOPIFY_SECRET", null)
+    'email' => env('EZYSLIPS_EMAIL', null),
+    'license' => env('EZYSLIPS_LICENSE_KEY', null)
 ];
