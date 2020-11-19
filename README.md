@@ -86,9 +86,28 @@ class Foo
     {
         $this->ezyslips = $ezyslips;
     }
+    /*
+    * returns a single order
+    */
+    public function getOrder(Request $request)
+    {
+        $orders = $this->ezyslips
+            ->order->fetch(['orderid' => 40586]);
+    }
 
     /*
-    * returns Collection
+    * returns the array of orders
+    */
+    public function getOrder(Request $request)
+    {
+        $orders = $this->ezyslips
+            ->order->all(['status' => 'A']);
+    }
+
+    /*
+    * Advanced use case call the api directly
+    * with specifying the prefix
+    * returns the raw responses
     */
     public function getOrder(Request $request)
     {

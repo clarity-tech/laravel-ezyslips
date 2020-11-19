@@ -2,7 +2,6 @@
 
 namespace ClarityTech\Ezyslips\Api;
 
-use ClarityTech\Ezyslips\Exceptions\EzyslipsApiException;
 use ClarityTech\Ezyslips\Facades\Ezyslips;
 use Illuminate\Support\Str;
 use Illuminate\Contracts\Support\Arrayable;
@@ -29,6 +28,24 @@ class Entity extends Resource implements Arrayable
         $className = substr($fullClassName, $pos + 1);
         $className = Str::of($className)->snake();
         return $className;
+    }
+
+    protected static function getEntityClass($name)
+    {
+        return __NAMESPACE__.'\\'.ucfirst($name);
+    }
+
+    protected static function resolveEntityName(string $name)
+    {
+        $entityName = Str::of($name)->camel();
+        $entityName = ucfirst($entityName);
+
+        return $entityName;
+    }
+
+    public static function getDefinedEntitiesArray()
+    {
+        return ['order', 'product', 'pickup_address', 'return_address'];
     }
 
     public function toArray()
@@ -69,10 +86,11 @@ class Entity extends Resource implements Arrayable
      * @param string $method
      * @param string $relativeUrl
      * @param array  $data
+     * @param bool  $first if set to true it will return the first record
      *
      * @return Entity
      */
-    protected function request(string $method, $entityUrl, array $params = [])
+    protected function request(string $method, $entityUrl, array $params = [], bool $first = false)
     {
         $response = Ezyslips::$method($entityUrl, $params);
 
@@ -86,13 +104,16 @@ class Entity extends Resource implements Arrayable
             return $ezr;
         }
 
+
+        if (is_array($response['message']) && $first) {
+            //count($response['message']) == 1
+            return static::buildEntity(head($response['message']));
+        }
+
         return static::buildEntity($response['message']);
     }
 
-    protected static function getEntityClass($name)
-    {
-        return __NAMESPACE__.'\\'.ucfirst($name);
-    }
+    
 
     /**
      * Given the JSON response of an API call, wraps it to corresponding entity
@@ -102,12 +123,18 @@ class Entity extends Resource implements Arrayable
      *
      * @return Entity
      */
-    protected static function buildEntity($data)
+    protected static function buildEntity($data, ?string $entityName = null)
     {
-        //$entities = static::getDefinedEntitiesArray();
         $entity = new static;
-        // $class = get_class($this);
-        // $entity = new $class;
+
+        if (! is_null($entityName)) {
+            if (in_array($name = Str::of($entityName)->singular(), static::getDefinedEntitiesArray())) {
+                $name = static::resolveEntityName($name);
+                $class = static::getEntityClass($name);
+                $entity = new $class;
+            }
+        }
+        
         if (is_array($data)) {
             $entity->fill($data);
         } else {
@@ -132,10 +159,17 @@ class Entity extends Resource implements Arrayable
         $attributes = [];
 
         foreach ($data as $key => $value) {
-            if (is_array($value)) {
-                if (static::isAssocArray($value) === false) {
-                    //$collection = [];
-                // foreach ($value as $v) {
+            if (is_array($value) && count($value) > 0) {
+                if (static::isAssocArray($value)) {
+                    $value = static::buildEntity($value, $key);
+                } else {
+                    $collection = [];
+                    
+                    foreach ($value as $entity) {
+                        $model = static::buildEntity($entity, $key);
+                        array_push($collection, $model);
+                    }
+                    // foreach ($value as $v) {
                     //     if (is_array($v)) {
                     //         $entity = static::buildEntity($v);
                     //         array_push($collection, $entity);
@@ -143,12 +177,10 @@ class Entity extends Resource implements Arrayable
                     //         array_push($collection, $v);
                     //     }
                     // }
-                    //$value = $collection;
-                } else {
-                    $value = static::buildEntity($value);
+                    $value = $collection;
                 }
             }
-
+            
             $attributes[$key] = $value;
         }
 
@@ -164,7 +196,7 @@ class Entity extends Resource implements Arrayable
     {
         $entityUrl = $this->getEntityUrl();
 
-        return $this->request('GET', $entityUrl, $params);
+        return $this->request('GET', $entityUrl, $params, true);
     }
 
     protected function all(array $options = [])

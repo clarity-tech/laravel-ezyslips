@@ -7,7 +7,7 @@ class Resource
     // implements ArrayAccess, IteratorAggregate
     protected array $attributes = [];
 
-    public $response;
+    //public $response;
 
     // public function getIterator()
     // {

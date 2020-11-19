@@ -17,7 +17,7 @@ class Order extends Entity
     public function fetch(array $params = [])
     {
         $this->setEntityUrl('getorders');
-        //orderid
+
         $entity = parent::fetch($params);
 
         if ($entity instanceof EzyslipsResponse) {
@@ -35,7 +35,14 @@ class Order extends Entity
     public function all(array $params = [])
     {
         $this->setEntityUrl('getorders');
-        return parent::all($params);
+
+        $response = parent::all($params);
+        // need to test
+        if ($response instanceof EzyslipsResponse) {
+            return $response->raiseError();
+        }
+
+        return $response;
     }
 
     /**
