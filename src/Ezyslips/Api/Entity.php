@@ -98,19 +98,33 @@ class Entity extends Resource implements Arrayable
             $response = $response->json();
         }
 
-        $ezr = EzyslipsResponse::validateAndParseIfSimple($response);
+        if (static::isAssocArray($response)) {
+            $ezr = EzyslipsResponse::validateAndParseIfSimple($response);
 
-        if ($ezr->isSimple()) {
-            return $ezr;
-        }
-
-
-        if (is_array($response['message']) && $first) {
-            //count($response['message']) == 1
-            return static::buildEntity(head($response['message']));
+            if ($ezr->isSimple()) {
+                return $ezr;
+            }
+            if (array_key_exists('message', $response)) {
+                if (is_array($response['message']) && $first) {
+                    //count($response['message']) == 1
+                    return static::buildEntity(head($response['message']));
+                }
+            }
+        } else {
+            return $this->parseSimpleCollection($response);
         }
 
         return static::buildEntity($response['message']);
+    }
+
+    public function parseSimpleCollection(array $responses) : array
+    {
+        $collection = [];
+        foreach ($responses as $response) {
+            $ezr = EzyslipsResponse::parseSimple($response);
+            array_push($collection, $ezr);
+        }
+        return $collection;
     }
 
     

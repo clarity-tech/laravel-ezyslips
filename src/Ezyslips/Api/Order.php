@@ -67,4 +67,20 @@ class Order extends Entity
 
         return parent::create($attributes);
     }
+
+    /**
+     * This API Restful that enables merchants
+     * to cancel orders from Ezyslips system
+     * @param array $params
+     *
+     * @return ClarityTech\Ezyslips\Api\Order
+     */
+    public function cancel(array $attributes)
+    {
+        $this->setEntityUrl('Cancelorders');
+        $entityUrl = $this->getEntityUrl();
+
+        return $this->request('POST', $entityUrl, $attributes);
+        //return parent::fetch();
+    }
 }

@@ -42,7 +42,7 @@ class EzyslipsResponse
 
         $entity->parseResponseKeys($response);
 
-        if (is_string($message = $response['message'])) {
+        if (is_string($message = $response['message']?? null)) {
             $entity->message = $message;
         }
 
