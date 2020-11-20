@@ -3,8 +3,9 @@
 namespace ClarityTech\Ezyslips\Api;
 
 use ClarityTech\Ezyslips\Exceptions\EzyslipsApiException;
+use Illuminate\Contracts\Support\Arrayable;
 
-class EzyslipsResponse
+class EzyslipsResponse implements Arrayable
 {
     public bool $success = false;
     public bool $error = true;
@@ -56,5 +57,16 @@ class EzyslipsResponse
                 $this->{$key} = (bool) $response[$key];
             }
         }
+    }
+
+    public function toArray()
+    {
+        $array = [
+            'success' => $this->success,
+            'error' => $this->error,
+            'message' => $this->message
+        ];
+
+        return $array;
     }
 }
